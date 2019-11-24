@@ -9,12 +9,9 @@ import { ApolloProvider } from 'react-apollo';
 import { SubscriptionClient } from 'subscriptions-transport-ws';
 
 const App: React.FC = () => {
-    const subscriptionClient = new SubscriptionClient(
-        'ws://localhost:8080/graphql',
-        {
-            reconnect: true,
-        }
-    );
+    const subscriptionClient = new SubscriptionClient('/api/graphql', {
+        reconnect: true,
+    });
     const wsLink = new WebSocketLink(subscriptionClient);
     const client = new ApolloClient({
         link: wsLink,
