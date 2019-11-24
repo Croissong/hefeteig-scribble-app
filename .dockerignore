@@ -1,0 +1,7 @@
+*
+!src/
+!public/
+!yarn.lock
+!package.json
+!config-overrides.js
+!tsconfig.json
