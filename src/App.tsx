@@ -2,12 +2,23 @@ import React from 'react';
 import './App.css';
 import ChatComponent from './ChatComponent';
 
-import ApolloClient from 'apollo-boost';
+import { InMemoryCache } from 'apollo-cache-inmemory';
+import { ApolloClient } from 'apollo-client';
+import { WebSocketLink } from 'apollo-link-ws';
 import { ApolloProvider } from 'react-apollo';
+import { SubscriptionClient } from 'subscriptions-transport-ws';
 
 const App: React.FC = () => {
+    const subscriptionClient = new SubscriptionClient(
+        'ws://localhost:8080/graphql',
+        {
+            reconnect: true,
+        }
+    );
+    const wsLink = new WebSocketLink(subscriptionClient);
     const client = new ApolloClient({
-        uri: '/graphql',
+        link: wsLink,
+        cache: new InMemoryCache(),
     });
 
     return (

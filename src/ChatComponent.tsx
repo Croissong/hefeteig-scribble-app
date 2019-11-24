@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { gql } from 'apollo-boost';
-import { useQuery, useMutation } from 'react-apollo';
+import './ChatComponent.css';
+import { useMutation, useSubscription } from 'react-apollo';
 
 interface Message {
     username: String;
@@ -8,29 +9,10 @@ interface Message {
     time: number;
 }
 
-
-
-
-// TODO:
-// Subscribe to messages.
-// Subscription logic implemented in backend.
-// Basically, it creates a FluxSink on subcription.
-// No messages are being sent, though.
-// Since GraphiQL has a bug (?) this has not been tested.
-// Maybe create test subscription logic in React with free
-// subscription endpoint online?
 const ChatComponent: React.FC = () => {
-    // TODO: Error handling.
-    const { loading, error, data } = useQuery(gql`
-        {
-            messages {
-                username
-                text
-                time
-            }
-        }
-    `);
-    const [sendMessage, { data: mutData }] = useMutation(gql`
+    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState([] as Message[]);
+    const [sendMessage] = useMutation(gql`
         mutation SendMessage($username: String!, $message: String!) {
             sendMessage(username: $username, message: $message) {
                 username
@@ -38,24 +20,47 @@ const ChatComponent: React.FC = () => {
             }
         }
     `);
-
-    const [message, setMessage] = useState('');
+    const { error } = useSubscription(
+        gql`
+            subscription MessagesSubscription($username: String!) {
+                messagesSubscription(username: $username) {
+                    username
+                    text
+                    time
+                }
+            }
+        `,
+        {
+            variables: { username: 'test' },
+            onSubscriptionData: data => {
+                setMessages([
+                    ...messages,
+                    data.subscriptionData.data.messagesSubscription,
+                ]);
+            },
+        }
+    );
 
     const send_message = (message: String) => {
         // TODO: Validate empty or invalid message.
-        console.log(message);
-        sendMessage({ variables: { username: 'usernameA', message: message } });
+        if (message.trim().length > 0) {
+            sendMessage({ variables: { username: 'test', message: message } });
+        }
         setMessage('');
     };
 
-    if (loading) return <div> Loading ...</div>;
+    if (error) console.error(`asdasd ${error}`);
     return (
         <div>
-            <div>
-                {data.messages.map((value: Message, index: number) => {
+            <div className="chat">
+                {messages.map((value: Message, index: number) => {
                     return (
                         <div key={index}>
-                            {value.time} - {value.username}: {value.text}
+                            {new Date(value.time).toLocaleString('de-DE', {
+                                timeZone: Intl.DateTimeFormat().resolvedOptions()
+                                    .timeZone,
+                            })}{' '}
+                            - {value.username}: {value.text}
                         </div>
                     );
                 })}
